@@ -1,28 +1,153 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-  </div>
+  <v-app>
+    <v-app-bar app color="primary" dark>
+      <div class="d-flex align-center">
+        <v-btn text dark @click="openAion">
+          <v-img
+              alt="Aion"
+              class="shrink mr-2"
+              contain
+              src="https://imgfiles-cdn.plaync.com/file/contents/download/20200619064945-tnwXZgDbd0m6GYurJcxV0-v4"
+              width="80"
+          />
+        </v-btn>
+        <span>아이온 헬퍼</span>
+      </div>
+      <v-spacer></v-spacer>
+
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn fab @click="openDiscord"
+                 dark v-bind="attrs" v-on="on" icon class="mr-2"><v-icon>mdi-discord</v-icon></v-btn>
+        </template>
+        <span>디스코드 참여하기</span>
+      </v-tooltip>
+
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-badge icon="mdi-crown" overlap>
+            <v-btn @click="openGuestbook" icon class="mx-0" v-bind="attrs" v-on="on">
+              <v-avatar>
+                <v-img src="https://profileimg.plaync.com/game_profile_images/aion/images?gameServerKey=22&charKey=72701"></v-img>
+              </v-avatar>
+            </v-btn>
+          </v-badge>
+        </template>
+        <span>제작자</span>
+      </v-tooltip>
+
+    </v-app-bar>
+    <v-main  class="grey lighten-3">
+      <v-alert class="ma-5" type="info">아이온 헬퍼 데스크탑 베타버전입니다. 업데이트가 안될수 있습니다.</v-alert>
+      <v-container >
+        <v-row>
+          <v-col cols="12" v-if="navi === 'findchar'"><find-char></find-char></v-col>
+          <v-col cols="12" v-if="navi === 'link'"><link-gen></link-gen></v-col>
+          <v-col cols="12" v-if="navi === 'piece'"><piece></piece></v-col>
+        </v-row>
+      </v-container>
+    </v-main>
+
+    <v-bottom-navigation app v-model="navi">
+      <v-btn value="findchar" :dark="navi === 'findchar'">
+        <span>캐릭터 검색</span>
+        <v-icon>mdi-human-greeting</v-icon>
+      </v-btn>
+
+      <v-btn value="link" :dark="navi === 'link'">
+        <span>아이템 링크</span>
+        <v-icon>mdi-link</v-icon>
+      </v-btn>
+
+      <v-btn value="piece">
+        <span>조각노트</span>
+        <v-icon>mdi-creation</v-icon>
+      </v-btn>
+
+      <!--      <v-btn value="nearby">-->
+      <!--        <span>레기온 문장 생성기</span>-->
+      <!--        <v-icon>mdi-flag-checkered</v-icon>-->
+      <!--      </v-btn>-->
+    </v-bottom-navigation>
+  </v-app>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
+import FindChar from "./components/FindChar"
+import LinkGen from "./components/LinkGen"
+import Piece from "./components/Piece"
 export default {
   name: 'App',
-  components: {
-    HelloWorld
-  }
-}
-</script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
+  components: {
+    FindChar,
+    LinkGen,
+    Piece
+  },
+  //
+  // data: () => ({
+  //   //
+  // }),
+  mounted() {
+    // setInterval(this.updateTime, 300)
+  },
+  watch: {
+    keyword () {
+      this.search();
+    },
+    selectedChar () {
+      this.findChar();
+    },
+  },
+  data () {
+    return {
+      navi: 'findchar',
+      server: "",
+      keyword: "",
+      suggest: [],
+      hour: 0,
+      time: "",
+      selectedChar: {},
+      char: {},
+      result: {},
+      servers: [
+        {id: 1, name: "가디언", type: "GUARDIAN"},
+        {id: 2, name: "아칸", type: "ARKAN"},
+        {id: 21, name: "이스라펠", type: "ISRAFEL"},
+        {id: 22, name: "네자칸", type: "NEZAKAN"},
+        {id: 23, name: "지켈", type: "ZICKEL"},
+        {id: 24, name: "바이젤", type: "BYZEL"},
+        {id: 25, name: "트리니엘", type: "TRINIEL"},
+        {id: 26, name: "카이시넬", type: "KAISINEL"},
+        {id: 27, name: "루미엘", type: "LUMIEL"},
+      ]
+    }
+  },
+  methods:{
+    async search(){
+      const response = await this.axios.get(`/api/suggest?keyword=${this.keyword || ''}&server=${this.server}`);
+      this.suggest = response.data;
+    },
+    async findChar(){
+      const {server, userid} = this.selectedChar;
+      if(server === 'GUARDIAN' || server === 'ARKAN'){
+        return;
+      }
+      const response = await this.axios.get(`/api/character/${server}/${userid}`);
+      this.char = response.data;
+      console.info(this.char)
+      // this.suggest = response.data;
+    },
+    openAion(){
+      window.open(`https://aion.plaync.com/`);
+    },
+    openDiscord(){
+      // window.open(`https://discord.com/api/oauth2/authorize?client_id=828894960304128025&permissions=67584&scope=bot`);
+      window.open(`https://discord.gg/Yt4Rz5NPPX`);
+    },
+    openGuestbook(){
+      window.open(`https://aion.plaync.com/characters/server/22/id/72701/board/guestbook`);
+    },
+  }
+};
+</script>
